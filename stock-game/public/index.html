@@ -265,10 +265,49 @@ function defaultGS(){
 /* ═══════════════════════════════════════════════
    STORAGE
 ═══════════════════════════════════════════════ */
-async function sGet(k,sh=false){ try{const r=await window.storage.get(k,sh);return r?r.value:null;}catch{return null;} }
-async function sSet(k,v,sh=false){ try{await window.storage.set(k,v,sh);}catch{} }
-async function sDel(k,sh=false){ try{await window.storage.delete(k,sh);}catch{} }
-async function sList(pfx,sh=false){ try{const r=await window.storage.list(pfx,sh);return r&&r.keys?r.keys:[];}catch{return[];} }
+
+async function sGet(k) {
+  if (k === SK.ROLE || k === SK.ID || k === SK.NAME) return localStorage.getItem(k);
+  try {
+    const res = await fetch('/api/get?k=' + encodeURIComponent(k));
+    const d = await res.json();
+    return d.value;
+  } catch { return null; }
+}
+
+async function sSet(k, v) {
+  if (k === SK.ROLE || k === SK.ID || k === SK.NAME) {
+    localStorage.setItem(k, v); return;
+  }
+  try {
+    await fetch('/api/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ k, v })
+    });
+  } catch {}
+}
+
+async function sDel(k) {
+  if (k === SK.ROLE || k === SK.ID || k === SK.NAME) {
+    localStorage.removeItem(k); return;
+  }
+  try {
+    await fetch('/api/del', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ k })
+    });
+  } catch {}
+}
+
+async function sList(pfx) {
+  try {
+    const res = await fetch('/api/list?pfx=' + encodeURIComponent(pfx));
+    const d = await res.json();
+    return d.keys;
+  } catch { return []; }
+}
 
 async function saveGS(gs){ gs.ts=Date.now(); await sSet(SK.GAME,JSON.stringify(gs),true); }
 async function loadGS(){ const v=await sGet(SK.GAME,true); return v?JSON.parse(v):null; }
